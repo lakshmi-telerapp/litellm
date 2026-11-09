@@ -1,0 +1,88 @@
+services:
+  litellm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.database
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - SERVICE_URL_LITELLM_4000
+      - LITELLM_LOG=${LITELLM_LOG:-ERROR}
+      - LITELLM_MODE=${LITELLM_MODE:-PRODUCTION}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - UI_USERNAME=${UI_USERNAME:-${SERVICE_USER_UI}}
+      - UI_PASSWORD=${UI_PASSWORD:-${SERVICE_PASSWORD_UI}}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-litellm}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-litellm}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE=${OPENAI_API_BASE}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_API_BASE=${ANTHROPIC_API_BASE}
+      - VOYAGE_API_KEY=${VOYAGE_API_KEY}
+      - VOYAGE_API_BASE=${VOYAGE_API_BASE}
+      - STORE_MODEL_IN_DB=${STORE_MODEL_IN_DB:-True}
+      - MAX_STRING_LENGTH_PROMPT_IN_DB=${MAX_STRING_LENGTH_PROMPT_IN_DB}
+    volumes:
+      - ./litellm-config.coolify.yaml:/app/config.yaml:ro
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - "-c"
+        - "import urllib.request;urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness',timeout=5)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    command:
+      - "--config"
+      - /app/config.yaml
+      - "--port"
+      - "4000"
+      - "--num_workers"
+      - "2"
+      - "--run_gunicorn"
+      - "--max_requests_before_restart"
+      - "1000"
+
+  postgres:
+    image: "postgres:16-alpine"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-litellm}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "pg_isready -h localhost -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  pg-data:
+    external: true
+    name: sohbdqqn4edspx6rzohgufqp_pg-data
+  redis-data:
+    external: true
+    name: sohbdqqn4edspx6rzohgufqp_redis-data
