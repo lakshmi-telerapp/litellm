@@ -1,7 +1,7 @@
 services:
   litellm:
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.database
     depends_on:
       postgres:
@@ -30,7 +30,7 @@ services:
       - STORE_MODEL_IN_DB=${STORE_MODEL_IN_DB:-True}
       - MAX_STRING_LENGTH_PROMPT_IN_DB=${MAX_STRING_LENGTH_PROMPT_IN_DB}
     volumes:
-      - ./litellm-config.coolify.yaml:/app/config.yaml:ro
+      - ./docker/litellm-config.coolify.yaml:/app/config.yaml:ro
     healthcheck:
       test:
         - CMD
