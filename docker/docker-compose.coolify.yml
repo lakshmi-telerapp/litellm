@@ -2,7 +2,7 @@ services:
   litellm:
     build:
       context: .
-      dockerfile: docker/Dockerfile.database
+      dockerfile: docker/Dockerfile.coolify
     depends_on:
       postgres:
         condition: service_healthy
