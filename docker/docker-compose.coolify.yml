@@ -83,8 +83,4 @@ services:
 
 volumes:
   pg-data:
-    external: true
-    name: sohbdqqn4edspx6rzohgufqp_pg-data
   redis-data:
-    external: true
-    name: sohbdqqn4edspx6rzohgufqp_redis-data
